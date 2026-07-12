@@ -112,6 +112,7 @@ if vulkanBuild {
             // compile no_cpu/compiled.cpp instead of cpu/compiled.cpp and
             // exclude the rest of no_cpu.
             "mlx/mlx/backend/cpu/compiled.cpp",
+            "mlx/mlx/backend/cpu/jit_compiler.cpp",
             "mlx/mlx/backend/no_cpu/allocator.cpp",
             "mlx/mlx/backend/no_cpu/device_info.cpp",
             "mlx/mlx/backend/no_cpu/eval.cpp",
@@ -256,6 +257,7 @@ if vulkanBuild {
     platformExcludes =
         [
             "mlx/mlx/backend/cpu/compiled.cpp",
+            "mlx/mlx/backend/cpu/jit_compiler.cpp",
 
             // opt-out of these backends (using metal)
             "mlx/mlx/backend/no_gpu",

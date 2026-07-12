@@ -22,4 +22,8 @@
     @inlinable func tan(_ x: Float) -> Float { tanf(x) }
     @inlinable func tanh(_ x: Float) -> Float { tanhf(x) }
     @inlinable func atan2(_ y: Float, _ x: Float) -> Float { atan2f(y, x) }
+    @inlinable func floor(_ x: Float) -> Float { x.rounded(.down) }
+    @inlinable func ceil(_ x: Float) -> Float { x.rounded(.up) }
+    @inlinable func round(_ x: Float) -> Float { x.rounded(.toNearestOrAwayFromZero) }
+    @inlinable func fmod(_ x: Float, _ y: Float) -> Float { x.truncatingRemainder(dividingBy: y) }
 #endif
