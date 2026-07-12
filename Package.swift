@@ -78,12 +78,84 @@ let noCudaCmlxExcludes = [
     "mlx/mlx/backend/cuda/unary",
 ]
 
-#if os(Linux)
-    let platformExcludes: [String]
-    let cxxSettings: [CXXSetting]
-    let linkerSettings: [LinkerSetting]
-    let mlxSwiftExcludes: [String]
+let noVulkanCmlxExcludes = [
+    // Exclude the whole Vulkan backend. Nothing outside it references the
+    // vk:: symbols, so the no_vulkan.cpp stub is not needed either.
+    "mlx/mlx/backend/vulkan"
+]
 
+// The Vulkan backend (Android and other Vulkan platforms) is selected with
+// SPM_VULKAN=1 in the environment rather than by `#if os(...)` because the
+// manifest is evaluated on the build host, not the target (e.g. when
+// cross-compiling to Android from macOS).
+let vulkanBuild = Context.environment["SPM_VULKAN"] == "1"
+
+let platformExcludes: [String]
+let cxxSettings: [CXXSetting]
+let linkerSettings: [LinkerSetting]
+let mlxSwiftExcludes: [String]
+
+if vulkanBuild {
+    // Vulkan GPU backend + CPU backend (OpenBLAS), typically Android.
+    let openblas = Context.environment["MLX_OPENBLAS_PATH"]
+        ?? "/Users/kennywalker/Documents/Developer/MLX/prebuilt/openblas-android/arm64-v8a"
+
+    platformExcludes =
+        [
+            "framework",
+            "include-framework",
+            "metal-cpp",
+
+            "mlx/mlx/backend/no_gpu",
+
+            // The CPU backend is used, but there is no on-device C++ JIT:
+            // compile no_cpu/compiled.cpp instead of cpu/compiled.cpp and
+            // exclude the rest of no_cpu.
+            "mlx/mlx/backend/cpu/compiled.cpp",
+            "mlx/mlx/backend/no_cpu/allocator.cpp",
+            "mlx/mlx/backend/no_cpu/device_info.cpp",
+            "mlx/mlx/backend/no_cpu/eval.cpp",
+            "mlx/mlx/backend/no_cpu/event.cpp",
+            "mlx/mlx/backend/no_cpu/fence.cpp",
+            "mlx/mlx/backend/no_cpu/primitives.cpp",
+            "mlx/mlx/backend/no_cpu/CMakeLists.txt",
+
+            "mlx/mlx/backend/cpu/gemms/bnns.cpp",  // macOS Accelerate version
+            "mlx-conditional",
+            "mlx-c/mlx/c/metal.cpp",
+
+            // Vulkan backend: build the real thing, not the stub; shaders are
+            // precompiled into mlx-generated/vulkan/vulkan_spirv.h.
+            "mlx/mlx/backend/vulkan/no_vulkan.cpp",
+            "mlx/mlx/backend/vulkan/CMakeLists.txt",
+            "mlx/mlx/backend/vulkan/shaders",
+        ] + noMetalCmlxExcludes + noCudaCmlxExcludes
+
+    cxxSettings = [
+        .headerSearchPath("mlx-generated/vulkan"),
+        .headerSearchPath("mlx/mlx/backend/vulkan/vendor/volk"),
+        .headerSearchPath("mlx/mlx/backend/vulkan/vendor/vma"),
+        .define("MLX_USE_VULKAN"),
+        .define("VK_NO_PROTOTYPES"),
+        .define("VMA_STATIC_VULKAN_FUNCTIONS", to: "0"),
+        .define("VMA_DYNAMIC_VULKAN_FUNCTIONS", to: "1"),
+        .unsafeFlags(["-I\(openblas)/include"]),
+    ]
+
+    linkerSettings = [
+        .linkedLibrary("vulkan", .when(platforms: [.android])),
+        .linkedLibrary("log", .when(platforms: [.android])),
+        .unsafeFlags(["-L\(openblas)/lib"]),
+        .linkedLibrary("openblas"),
+    ]
+
+    mlxSwiftExcludes = [
+        "GPU+Metal.swift",
+        "GPU+CUDA.swift",
+        "MLXArray+Metal.swift",
+    ]
+} else {
+    #if os(Linux)
     if Context.environment["SPM_CUDA"] != "0" {
         // Linux with CUDA
 
@@ -113,7 +185,7 @@ let noCudaCmlxExcludes = [
                 "mlx/mlx/backend/cuda/quantized/qmm/qmm.cu",
                 "mlx/mlx/backend/cuda/quantized/qmm/qmm_impl_sm90_m128_n128_m2.cu",
                 "mlx/mlx/backend/cuda/quantized/qmm/fp_qmv.cu",
-            ] + noMetalCmlxExcludes
+            ] + noMetalCmlxExcludes + noVulkanCmlxExcludes
 
         cxxSettings = [
             .unsafeFlags(["-I/usr/local/cuda/include"]),
@@ -138,6 +210,7 @@ let noCudaCmlxExcludes = [
 
         mlxSwiftExcludes = [
             "GPU+Metal.swift",
+            "GPU+Vulkan.swift",
             "MLXArray+Metal.swift",
         ]
     } else {
@@ -157,7 +230,7 @@ let noCudaCmlxExcludes = [
 
                 "mlx-c/mlx/c/fast.cpp",  // Exclude on Linux - calls metal_kernel unconditionally
 
-            ] + noMetalCmlxExcludes + noCudaCmlxExcludes
+            ] + noMetalCmlxExcludes + noCudaCmlxExcludes + noVulkanCmlxExcludes
 
         cxxSettings = []
 
@@ -171,15 +244,16 @@ let noCudaCmlxExcludes = [
         mlxSwiftExcludes = [
             "GPU+Metal.swift",
             "GPU+CUDA.swift",
+            "GPU+Vulkan.swift",
             "MLXArray+Metal.swift",
             "MLXFast.swift",
             "MLXFastKernel.swift",
         ]
     }
-#else
+    #else
     // Apple's platforms with Metal
 
-    let platformExcludes: [String] =
+    platformExcludes =
         [
             "mlx/mlx/backend/cpu/compiled.cpp",
 
@@ -191,9 +265,9 @@ let noCudaCmlxExcludes = [
             // bnns instead of simd (accelerate)
             "mlx/mlx/backend/cpu/gemms/simd_fp16.cpp",
             "mlx/mlx/backend/cpu/gemms/simd_bf16.cpp",
-        ] + noCudaCmlxExcludes
+        ] + noCudaCmlxExcludes + noVulkanCmlxExcludes
 
-    let cxxSettings: [CXXSetting] = [
+    cxxSettings = [
         .headerSearchPath("metal-cpp"),
 
         .define("MLX_USE_ACCELERATE"),
@@ -203,16 +277,18 @@ let noCudaCmlxExcludes = [
         .define("METAL_PATH", to: "\"default.metallib\""),
     ]
 
-    let linkerSettings: [LinkerSetting] = [
+    linkerSettings = [
         .linkedFramework("Foundation"),
         .linkedFramework("Metal"),
         .linkedFramework("Accelerate"),
     ]
 
-    let mlxSwiftExcludes: [String] = [
-        "GPU+CUDA.swift"
+    mlxSwiftExcludes = [
+        "GPU+CUDA.swift",
+        "GPU+Vulkan.swift",
     ]
-#endif
+    #endif
+}
 
 let cmlx = Target.target(
     name: "Cmlx",
@@ -235,9 +311,6 @@ let cmlx = Target.target(
         "fmt/support",
         "fmt/src/os.cc",
         "fmt/src/fmt.cc",
-
-        // these are selected conditionally
-        "mlx/mlx/backend/no_cpu/compiled.cpp",
 
         // mlx files that are not part of the build
         "mlx/ACKNOWLEDGMENTS.md",
