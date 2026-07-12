@@ -48,7 +48,7 @@ open class ConvTransposed1d: Module, UnaryLayer {
         groups: Int = 1,
         bias: Bool = true
     ) {
-        let scale = sqrt(1 / Float(inputChannels * kernelSize))
+        let scale = (Float(1) / Float(inputChannels * kernelSize)).squareRoot()
 
         self.weight = MLXRandom.uniform(
             low: -scale, high: scale,
@@ -124,7 +124,7 @@ open class ConvTransposed2d: Module, UnaryLayer {
         groups: Int = 1,
         bias: Bool = true
     ) {
-        let scale = sqrt(1 / Float(inputChannels * kernelSize.first * kernelSize.second))
+        let scale = (Float(1) / Float(inputChannels * kernelSize.first * kernelSize.second)).squareRoot()
 
         self.weight = MLXRandom.uniform(
             low: -scale, high: scale,

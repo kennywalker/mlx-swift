@@ -85,7 +85,7 @@ open class Linear: Module, UnaryLayer, Quantizable {
     ///   - outputDimensions: number of output dimensions
     ///   - bias: if `true` this layer will apply a bias
     public init(_ inputDimensions: Int, _ outputDimensions: Int, bias: Bool = true) {
-        let scale = sqrt(1.0 / Float(inputDimensions))
+        let scale = (Float(1) / Float(inputDimensions)).squareRoot()
         self.weight = MLXRandom.uniform(-scale ..< scale, [outputDimensions, inputDimensions])
         if bias {
             self.bias = MLXRandom.uniform(-scale ..< scale, [outputDimensions])
@@ -168,7 +168,7 @@ open class Bilinear: Module {
     public init(
         _ inputDimensions1: Int, _ inputDimensions2: Int, _ outputDimensions: Int, bias: Bool = true
     ) {
-        let scale = sqrt(1.0 / Float(inputDimensions1))
+        let scale = (Float(1) / Float(inputDimensions1)).squareRoot()
         self.weight = MLXRandom.uniform(
             -scale ..< scale, [outputDimensions, inputDimensions2, inputDimensions1])
         if bias {

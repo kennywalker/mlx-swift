@@ -1060,7 +1060,7 @@ private let compiledLogSigmoid: @Sendable (MLXArray) -> MLXArray = {
 
 private let compiledGelu: @Sendable (MLXArray) -> MLXArray = {
     compile(shapeless: true) { x in
-        x * (1 + erf(x / sqrt(2))) / 2
+        x * (1 + erf(x / Float(2).squareRoot())) / 2
     }
 }()
 

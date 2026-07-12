@@ -84,7 +84,7 @@ open class MultiHeadAttention: Module {
             .transposed(0, 2, 1, 3)
         values = unflatten(values, axis: -1, shape: [numHeads, -1])
             .transposed(0, 2, 1, 3)
-        let scale = sqrt(1 / Float(queries.dim(-1)))
+        let scale = (Float(1) / Float(queries.dim(-1))).squareRoot()
 
         let maskMode: MLXFast.ScaledDotProductAttentionMaskMode =
             if let mask {

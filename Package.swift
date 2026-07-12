@@ -300,6 +300,7 @@ let cmlx = Target.target(
         // example code + mlx-c distributed
         "mlx-c/examples",
         "mlx-c/mlx/c/distributed.cpp",
+        "mlx-c/mlx/c/gguf.cpp",
         "mlx-c/mlx/c/distributed_group.cpp",
 
         // vendored library, include header only
@@ -345,6 +346,7 @@ let cmlx = Target.target(
         "mlx/mlx/distributed/nccl/nccl.cpp",
         "mlx/mlx/distributed/nccl/nccl_stub",
         "mlx/mlx/distributed/jaccl/jaccl.cpp",
+        "mlx/mlx/distributed/jaccl/lib",
         "mlx/mlx/distributed/jaccl/mesh.cpp",
         "mlx/mlx/distributed/jaccl/ring.cpp",
         "mlx/mlx/distributed/jaccl/utils.cpp",

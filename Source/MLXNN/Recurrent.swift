@@ -39,7 +39,7 @@ open class RNN: Module {
         self.hiddenSize = hiddenSize
         self.nonLinearity = nonLinearity
 
-        let scale = 1 / sqrt(Float(hiddenSize))
+        let scale = 1 / Float(hiddenSize).squareRoot()
         self._wxh.wrappedValue = MLXRandom.uniform(
             low: -scale, high: scale, [hiddenSize, inputSize])
         self._whh.wrappedValue = MLXRandom.uniform(
@@ -107,7 +107,7 @@ open class GRU: Module {
     ///   - bias: if `true` use a bias
     public init(inputSize: Int, hiddenSize: Int, bias: Bool = true) {
         self.hiddenSize = hiddenSize
-        let scale = 1 / sqrt(Float(hiddenSize))
+        let scale = 1 / Float(hiddenSize).squareRoot()
         self._wx.wrappedValue = MLXRandom.uniform(
             low: -scale, high: scale, [3 * hiddenSize, inputSize])
         self._wh.wrappedValue = MLXRandom.uniform(
@@ -207,7 +207,7 @@ open class LSTM: Module {
     ///   - bias: if `true` use a bias
     public init(inputSize: Int, hiddenSize: Int, bias: Bool = true) {
         self.hiddenSize = hiddenSize
-        let scale = 1 / sqrt(Float(hiddenSize))
+        let scale = 1 / Float(hiddenSize).squareRoot()
         self._wx.wrappedValue = MLXRandom.uniform(
             low: -scale, high: scale, [4 * hiddenSize, inputSize])
         self._wh.wrappedValue = MLXRandom.uniform(

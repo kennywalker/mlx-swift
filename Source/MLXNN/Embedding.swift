@@ -21,7 +21,7 @@ open class Embedding: Module, UnaryLayer, Quantizable {
     ///   - embeddingCount: How many possible discrete tokens can we embed.  Usually called the vocabulary size.
     ///   - dimensions: dimensionality of the embeddings.
     public init(embeddingCount: Int, dimensions: Int) {
-        let scale = sqrt(1 / Float(dimensions))
+        let scale = (Float(1) / Float(dimensions)).squareRoot()
         self.weight = MLXRandom.normal([embeddingCount, dimensions], scale: scale)
     }
 

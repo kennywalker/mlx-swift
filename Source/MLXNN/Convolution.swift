@@ -45,7 +45,7 @@ open class Conv1d: Module, UnaryLayer {
         groups: Int = 1,
         bias: Bool = true
     ) {
-        let scale = sqrt(1 / Float(inputChannels * kernelSize))
+        let scale = (Float(1) / Float(inputChannels * kernelSize)).squareRoot()
 
         precondition(inputChannels % groups == 0, "Input channels must be divisible by groups")
 
@@ -116,7 +116,7 @@ open class Conv2d: Module, UnaryLayer {
         groups: Int = 1,
         bias: Bool = true
     ) {
-        let scale = sqrt(1 / Float(inputChannels * kernelSize.first * kernelSize.second))
+        let scale = (Float(1) / Float(inputChannels * kernelSize.first * kernelSize.second)).squareRoot()
 
         precondition(inputChannels % groups == 0, "Input channels must be divisible by groups")
 

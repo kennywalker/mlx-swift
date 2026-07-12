@@ -169,7 +169,7 @@ open class QuantizedEmbedding: Embedding, Quantized {
         embeddingCount: Int, dimensions: Int, groupSize: Int = 64, bits: Int = 4,
         mode: QuantizationMode = .affine
     ) {
-        let scale = sqrt(1 / Float(dimensions))
+        let scale = (Float(1) / Float(dimensions)).squareRoot()
         let weight = MLXRandom.normal([embeddingCount, dimensions]) * scale
 
         self.init(weight: weight, groupSize: groupSize, bits: bits, mode: mode)
@@ -265,7 +265,7 @@ open class QuantizedLinear: Linear, Quantized {
         bias: Bool = true, groupSize: Int = 64, bits: Int = 4,
         mode: QuantizationMode = .affine
     ) {
-        let scale = sqrt(1 / Float(inputDimensions))
+        let scale = (Float(1) / Float(inputDimensions)).squareRoot()
         let weight = MLXRandom.uniform(
             low: -scale, high: scale, [outputDimensions, inputDimensions])
 
