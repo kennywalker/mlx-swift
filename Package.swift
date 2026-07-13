@@ -149,9 +149,13 @@ if dx12Build {
 
     cxxSettings = [
         .headerSearchPath("mlx-generated/dx12"),
-        .headerSearchPath("mlx/mlx/backend/dx12/vendor/DirectX-Headers/include"),
-        .headerSearchPath("mlx/mlx/backend/dx12/vendor/D3D12MemoryAllocator/include"),
+        .headerSearchPath("mlx/mlx/backend/dx12/vendor/directx-headers/include"),
+        .headerSearchPath("mlx/mlx/backend/dx12/vendor/d3d12ma"),
         .define("MLX_USE_DX12"),
+        // mlx's CMake defines these for MSVC/Windows builds (CMakeLists:54);
+        // without them windows.h's min/max macros poison the mlx headers.
+        .define("NOMINMAX"),
+        .define("WIN32_LEAN_AND_MEAN"),
         .unsafeFlags(["-I\(openblas)/include"]),
         .unsafeFlags(["-I\(openblas)/include/openblas"]),
     ]
