@@ -452,8 +452,10 @@ public final class MLXArray {
             // mlx_array_item_complex64() isn't visible in swift so read the array
             // contents.  call self.eval() as this doesn't end up in item()
             self.eval()
-            let ptr = UnsafePointer<Complex<Float32>>(mlx_array_data_complex64(ctx))!
-            return ptr.pointee as! T
+            // Raw-pointer hop: the C return type imports as OpaquePointer on
+            // Apple/Linux but as UnsafePointer<mlx_complex64_t> on Windows.
+            let raw = UnsafeRawPointer(mlx_array_data_complex64(ctx)!)
+            return raw.assumingMemoryBound(to: Complex<Float32>.self).pointee as! T
         default:
             fatalError("Unable to get item() as \(type)")
         }
