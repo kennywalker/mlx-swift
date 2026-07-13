@@ -145,6 +145,9 @@ if dx12Build {
             "mlx/mlx/backend/dx12/no_dx12.cpp",
             "mlx/mlx/backend/dx12/CMakeLists.txt",
             "mlx/mlx/backend/dx12/shaders",
+
+            // POSIX-only (netdb.h); mlx's CMake also drops it on WIN32.
+            "mlx/mlx/distributed/utils.cpp",
         ] + noMetalCmlxExcludes + noCudaCmlxExcludes + noVulkanCmlxExcludes
 
     cxxSettings = [
