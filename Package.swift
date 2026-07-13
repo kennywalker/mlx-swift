@@ -155,6 +155,9 @@ if dx12Build {
         .headerSearchPath("mlx/mlx/backend/dx12/vendor/directx-headers/include"),
         .headerSearchPath("mlx/mlx/backend/dx12/vendor/d3d12ma"),
         .define("MLX_USE_DX12"),
+        // Cmlx is built into the app statically; without MLX_STATIC the
+        // MLX_API macro turns into __declspec(dllimport) on Windows.
+        .define("MLX_STATIC"),
         // mlx's CMake defines these for MSVC/Windows builds (CMakeLists:54);
         // without them windows.h's min/max macros poison the mlx headers.
         .define("NOMINMAX"),
