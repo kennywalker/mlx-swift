@@ -32,7 +32,7 @@ extension LoadSaveError: LocalizedError {
 /// - ``loadArrays(url:stream:)``
 public func save(array: MLXArray, url: URL, stream: StreamOrDevice = .default) throws {
     precondition(url.isFileURL)
-    let path = url.path(percentEncoded: false)
+    let path = url.fileSystemPath
     switch url.pathExtension {
     case "npy":
         _ = try withError {
@@ -63,7 +63,7 @@ public func save(
     stream: StreamOrDevice = .default
 ) throws {
     precondition(url.isFileURL)
-    let path = url.path(percentEncoded: false)
+    let path = url.fileSystemPath
 
     let mlx_arrays = new_mlx_array_map(arrays)
     defer { mlx_map_string_to_array_free(mlx_arrays) }
@@ -96,7 +96,7 @@ public func save(
 /// - ``save(arrays:metadata:url:stream:)``
 public func loadArray(url: URL, stream: StreamOrDevice = .cpu) throws -> MLXArray {
     precondition(url.isFileURL)
-    let path = url.path(percentEncoded: false)
+    let path = url.fileSystemPath
 
     switch url.pathExtension {
     case "npy":
@@ -124,7 +124,7 @@ public func loadArray(url: URL, stream: StreamOrDevice = .cpu) throws -> MLXArra
 /// - ``save(arrays:metadata:url:stream:)``
 public func loadArrays(url: URL, stream: StreamOrDevice = .cpu) throws -> [String: MLXArray] {
     precondition(url.isFileURL)
-    let path = url.path(percentEncoded: false)
+    let path = url.fileSystemPath
 
     switch url.pathExtension {
     case "safetensors":
@@ -156,7 +156,7 @@ public func loadArraysAndMetadata(url: URL, stream: StreamOrDevice = .cpu) throw
     [String: MLXArray], [String: String]
 ) {
     precondition(url.isFileURL)
-    let path = url.path(percentEncoded: false)
+    let path = url.fileSystemPath
 
     switch url.pathExtension {
     case "safetensors":

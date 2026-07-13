@@ -44,3 +44,19 @@ extension Int {
     @inlinable
     var int64: Int64 { Int64(self) }
 }
+
+extension URL {
+    /// Native filesystem path for the C APIs. `path(percentEncoded:)` keeps
+    /// the POSIX-style leading slash on Windows ("/C:/..."), which ucrt's
+    /// open() rejects with EINVAL.
+    var fileSystemPath: String {
+        #if os(Windows)
+            return withUnsafeFileSystemRepresentation { rep in
+                guard let rep else { return path(percentEncoded: false) }
+                return String(cString: rep)
+            }
+        #else
+            return path(percentEncoded: false)
+        #endif
+    }
+}
