@@ -207,14 +207,16 @@ public enum DType: Hashable, Sendable, CaseIterable {
 
 extension DType: Encodable {
     public func encode(to encoder: any Encoder) throws {
-        try self.cmlxDtype.rawValue.encode(to: encoder)
+        // numericCast: the imported C enum's RawValue is UInt32 on
+        // Apple/Linux but Int32 on Windows (MSVC C enums are signed).
+        try (numericCast(self.cmlxDtype.rawValue) as UInt32).encode(to: encoder)
     }
 }
 
 extension DType: Decodable {
     public init(from decoder: any Decoder) throws {
         let rawValue = try UInt32(from: decoder)
-        self.init(mlx_dtype(rawValue: rawValue))
+        self.init(mlx_dtype(rawValue: numericCast(rawValue)))
     }
 }
 
