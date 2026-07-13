@@ -1,11 +1,14 @@
 // Copyright © 2026 Apple Inc.
 
 // On Apple platforms Darwin provides Swift overloads of the libm functions
-// for `Float` (sqrt, log, exp, ...). The Android/Linux C modules only expose
-// the C-named variants (logf, expf, ...), so provide the Swift-styled
+// for `Float` (sqrt, log, exp, ...). The Android/Linux/Windows C modules only
+// expose the C-named variants (logf, expf, ...), so provide the Swift-styled
 // overloads the rest of MLXNN uses.
-#if os(Android) || os(Linux)
-    #if os(Android)
+#if os(Android) || os(Linux) || os(Windows)
+    #if os(Windows)
+        // ucrt provides logf/expf/powf/... for Float.
+        import CRT
+    #elseif os(Android)
         import Android
     #else
         import Glibc

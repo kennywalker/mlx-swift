@@ -84,18 +84,92 @@ let noVulkanCmlxExcludes = [
     "mlx/mlx/backend/vulkan"
 ]
 
+let noDX12CmlxExcludes = [
+    // Exclude the whole DirectX 12 backend (mirrors the Vulkan handling).
+    "mlx/mlx/backend/dx12"
+]
+
 // The Vulkan backend (Android and other Vulkan platforms) is selected with
 // SPM_VULKAN=1 in the environment rather than by `#if os(...)` because the
 // manifest is evaluated on the build host, not the target (e.g. when
 // cross-compiling to Android from macOS).
 let vulkanBuild = Context.environment["SPM_VULKAN"] == "1"
 
+// The DirectX 12 backend (Windows) is selected with SPM_DX12=1 for the same
+// reason: `#if os(...)` in the manifest evaluates on the build host.
+let dx12Build = Context.environment["SPM_DX12"] == "1"
+
 let platformExcludes: [String]
 let cxxSettings: [CXXSetting]
 let linkerSettings: [LinkerSetting]
 let mlxSwiftExcludes: [String]
 
-if vulkanBuild {
+if dx12Build {
+    // DirectX 12 GPU backend + CPU backend (OpenBLAS), Windows.
+    //
+    // OpenBLAS is consumed the same way as the Vulkan/Android build:
+    // MLX_OPENBLAS_PATH points at a prebuilt with include/ + lib/. The
+    // Windows prebuilt (C:\mlxtools\OpenBLAS on the build machine) nests
+    // headers in include/openblas/ and ships lib/openblas.lib, so both
+    // include layouts are added below.
+    let openblas = Context.environment["MLX_OPENBLAS_PATH"]
+        ?? "C:/mlxtools/OpenBLAS"
+
+    platformExcludes =
+        [
+            "framework",
+            "include-framework",
+            "metal-cpp",
+
+            "mlx/mlx/backend/no_gpu",
+
+            // The CPU backend is used, but there is no on-device C++ JIT:
+            // compile no_cpu/compiled.cpp instead of cpu/compiled.cpp and
+            // exclude the rest of no_cpu.
+            "mlx/mlx/backend/cpu/compiled.cpp",
+            "mlx/mlx/backend/cpu/jit_compiler.cpp",
+            "mlx/mlx/backend/no_cpu/allocator.cpp",
+            "mlx/mlx/backend/no_cpu/device_info.cpp",
+            "mlx/mlx/backend/no_cpu/eval.cpp",
+            "mlx/mlx/backend/no_cpu/event.cpp",
+            "mlx/mlx/backend/no_cpu/fence.cpp",
+            "mlx/mlx/backend/no_cpu/primitives.cpp",
+            "mlx/mlx/backend/no_cpu/CMakeLists.txt",
+
+            "mlx/mlx/backend/cpu/gemms/bnns.cpp",  // macOS Accelerate version
+            "mlx-conditional",
+            "mlx-c/mlx/c/metal.cpp",
+
+            // DX12 backend: build the real thing, not the stub; shaders are
+            // precompiled into mlx-generated/dx12/dx12_dxil.h.
+            "mlx/mlx/backend/dx12/no_dx12.cpp",
+            "mlx/mlx/backend/dx12/CMakeLists.txt",
+            "mlx/mlx/backend/dx12/shaders",
+        ] + noMetalCmlxExcludes + noCudaCmlxExcludes + noVulkanCmlxExcludes
+
+    cxxSettings = [
+        .headerSearchPath("mlx-generated/dx12"),
+        .headerSearchPath("mlx/mlx/backend/dx12/vendor/DirectX-Headers/include"),
+        .headerSearchPath("mlx/mlx/backend/dx12/vendor/D3D12MemoryAllocator/include"),
+        .define("MLX_USE_DX12"),
+        .unsafeFlags(["-I\(openblas)/include"]),
+        .unsafeFlags(["-I\(openblas)/include/openblas"]),
+    ]
+
+    // No d3d12/dxgi import libraries: the backend loads d3d12.dll and
+    // dxgi.dll at runtime via LoadLibrary.
+    linkerSettings = [
+        .unsafeFlags(["-L\(openblas)/lib"]),
+        .linkedLibrary("openblas"),
+    ]
+
+    mlxSwiftExcludes = [
+        "GPU+Metal.swift",
+        "GPU+CUDA.swift",
+        "GPU+Vulkan.swift",
+        "MLXArray+Metal.swift",
+    ]
+} else if vulkanBuild {
     // Vulkan GPU backend + CPU backend (OpenBLAS), typically Android.
     let openblas = Context.environment["MLX_OPENBLAS_PATH"]
         ?? "/Users/kennywalker/Documents/Developer/MLX/prebuilt/openblas-android/arm64-v8a"
@@ -130,7 +204,7 @@ if vulkanBuild {
             "mlx/mlx/backend/vulkan/no_vulkan.cpp",
             "mlx/mlx/backend/vulkan/CMakeLists.txt",
             "mlx/mlx/backend/vulkan/shaders",
-        ] + noMetalCmlxExcludes + noCudaCmlxExcludes
+        ] + noMetalCmlxExcludes + noCudaCmlxExcludes + noDX12CmlxExcludes
 
     cxxSettings = [
         .headerSearchPath("mlx-generated/vulkan"),
@@ -153,6 +227,7 @@ if vulkanBuild {
     mlxSwiftExcludes = [
         "GPU+Metal.swift",
         "GPU+CUDA.swift",
+        "GPU+DirectX.swift",
         "MLXArray+Metal.swift",
     ]
 } else {
@@ -186,7 +261,7 @@ if vulkanBuild {
                 "mlx/mlx/backend/cuda/quantized/qmm/qmm.cu",
                 "mlx/mlx/backend/cuda/quantized/qmm/qmm_impl_sm90_m128_n128_m2.cu",
                 "mlx/mlx/backend/cuda/quantized/qmm/fp_qmv.cu",
-            ] + noMetalCmlxExcludes + noVulkanCmlxExcludes
+            ] + noMetalCmlxExcludes + noVulkanCmlxExcludes + noDX12CmlxExcludes
 
         cxxSettings = [
             .unsafeFlags(["-I/usr/local/cuda/include"]),
@@ -212,6 +287,7 @@ if vulkanBuild {
         mlxSwiftExcludes = [
             "GPU+Metal.swift",
             "GPU+Vulkan.swift",
+            "GPU+DirectX.swift",
             "MLXArray+Metal.swift",
         ]
     } else {
@@ -232,6 +308,7 @@ if vulkanBuild {
                 "mlx-c/mlx/c/fast.cpp",  // Exclude on Linux - calls metal_kernel unconditionally
 
             ] + noMetalCmlxExcludes + noCudaCmlxExcludes + noVulkanCmlxExcludes
+            + noDX12CmlxExcludes
 
         cxxSettings = []
 
@@ -246,6 +323,7 @@ if vulkanBuild {
             "GPU+Metal.swift",
             "GPU+CUDA.swift",
             "GPU+Vulkan.swift",
+            "GPU+DirectX.swift",
             "MLXArray+Metal.swift",
             "MLXFast.swift",
             "MLXFastKernel.swift",
@@ -267,7 +345,7 @@ if vulkanBuild {
             // bnns instead of simd (accelerate)
             "mlx/mlx/backend/cpu/gemms/simd_fp16.cpp",
             "mlx/mlx/backend/cpu/gemms/simd_bf16.cpp",
-        ] + noCudaCmlxExcludes + noVulkanCmlxExcludes
+        ] + noCudaCmlxExcludes + noVulkanCmlxExcludes + noDX12CmlxExcludes
 
     cxxSettings = [
         .headerSearchPath("metal-cpp"),
@@ -288,6 +366,7 @@ if vulkanBuild {
     mlxSwiftExcludes = [
         "GPU+CUDA.swift",
         "GPU+Vulkan.swift",
+        "GPU+DirectX.swift",
     ]
     #endif
 }
